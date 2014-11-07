@@ -10,6 +10,7 @@
 // helper functions
 void makePriorityQueue(PriorityQueue<HuffmanNode*>& pqueue, const Map<int, int>& freqTable); 
 void makeTree(PriorityQueue<HuffmanNode*>& pqueue);
+void traverseTree(HuffmanNode* currNode, Map<int, string>& encodingMap, string currCode);
 
 /**
  * @brief buildFrequencyTable
@@ -39,6 +40,14 @@ Map<int, int> buildFrequencyTable(istream& input) {
     return freqTable;
 }
 
+/**
+ * @brief buildEncodingTree
+ * Builds encoding tree that arranges characters and their frequencies
+ * from most to least frequent. 
+ * @param freqTable - Map of characters and their corresponding frequencies;
+ *                    passed by reference. 
+ * @return - Returns pointer to parent node of encoding tree
+ */
 HuffmanNode* buildEncodingTree(const Map<int, int>& freqTable) {
     PriorityQueue<HuffmanNode*> pqueue;
     makePriorityQueue(pqueue, freqTable);
@@ -47,6 +56,14 @@ HuffmanNode* buildEncodingTree(const Map<int, int>& freqTable) {
     return pqueue.peek();   // this is just a placeholder so it will compile
 }
 
+/**
+ * @brief makeTree
+ * Makes encoding tree out of priority queue of HuffmanNodes. Tree has
+ * most frequent character near the top and least frequent characters
+ * as leaves on the bottom.
+ * @param pqueue - priority queue of HuffmanNodes used to make encoding 
+ *                 tree; passed by reference
+ */
 void makeTree(PriorityQueue<HuffmanNode*>& pqueue) {
     while (pqueue.size() > 1) {
         // dequeue first two nodes, store in left and right
@@ -62,6 +79,13 @@ void makeTree(PriorityQueue<HuffmanNode*>& pqueue) {
     }
 }
 
+/**
+ * @brief makePriorityQueue
+ * Packages each character and its frequency into a HuffmanNode and enqueues
+ * the nodes into a priority queue. 
+ * @param pqueue - Priority queue to fill; passed by reference.
+ * @param freqTable - Map of each character and its frequency; passed by reference. 
+ */
 void makePriorityQueue(PriorityQueue<HuffmanNode*>& pqueue, const Map<int, int>& freqTable) {
     Vector<int> keys = freqTable.keys();
     
@@ -71,11 +95,35 @@ void makePriorityQueue(PriorityQueue<HuffmanNode*>& pqueue, const Map<int, int>&
     }
 }
 
-
+/**
+ * @brief buildEncodingMap
+ * Builds encoding map of characters and their codes by calling recursive 
+ * traverseTree function. 
+ * @param encodingTree - pointer to first node in encoding tree from previous step
+ * @return 
+ */
 Map<int, string> buildEncodingMap(HuffmanNode* encodingTree) {
-    // TODO: implement this function
-    Map<int, string> encodingMap;   // this is just a placeholder so it will compile
-    return encodingMap;             // this is just a placeholder so it will compile
+    Map<int, string> encodingMap;
+    traverseTree(encodingTree, encodingMap, "");    
+    return encodingMap;
+}
+
+/**
+ * @brief traverseTree
+ * Recursively goes through tree, assigning codes to each leaf node (character).
+ * @param currNode - pointer to current node in the tree
+ * @param encodingMap - map passed by reference that stores characters and their codes
+ * @param currCode - string with current code, built up by 0's and 1's based on left 
+ *                   and right branches
+ */
+void traverseTree(HuffmanNode* currNode, Map<int, string>& encodingMap, string currCode) {
+    if (currNode->isLeaf()) {
+        encodingMap.put(currNode->character, currCode); // add character and code to map
+        return;
+    }
+    
+    traverseTree(currNode->zero, encodingMap, currCode + "0"); // left
+    traverseTree(currNode->one, encodingMap, currCode + "1"); // right
 }
 
 void encodeData(istream& input, const Map<int, string>& encodingMap, obitstream& output) {
