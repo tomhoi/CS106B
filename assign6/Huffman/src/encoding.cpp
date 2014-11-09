@@ -10,8 +10,9 @@
 // helper functions
 void makePriorityQueue(PriorityQueue<HuffmanNode*>& pqueue, const Map<int, int>& freqTable); 
 void makeTree(PriorityQueue<HuffmanNode*>& pqueue);
-void traverseTree(HuffmanNode* currNode, Map<int, string>& encodingMap, string currCode);
+void traverseTreeEncode(HuffmanNode* currNode, Map<int, string>& encodingMap, string currCode);
 void writeBit(obitstream& output, string value);
+void traverseTreeDecode(ibitstream& input, HuffmanNode* head, ostream& output, HuffmanNode* currNode);
 
 /**
  * @brief buildFrequencyTable
@@ -25,7 +26,7 @@ Map<int, int> buildFrequencyTable(istream& input) {
     // init variables
     Map<int, int> freqTable;
     bool endOfFile = false;
-    char currCharacter;
+    int currCharacter;
     
     // count character frequencies
     while (!endOfFile) {
@@ -54,7 +55,7 @@ HuffmanNode* buildEncodingTree(const Map<int, int>& freqTable) {
     makePriorityQueue(pqueue, freqTable);
     makeTree(pqueue);
     
-    return pqueue.peek();   // this is just a placeholder so it will compile
+    return pqueue.peek();
 }
 
 /**
@@ -105,26 +106,26 @@ void makePriorityQueue(PriorityQueue<HuffmanNode*>& pqueue, const Map<int, int>&
  */
 Map<int, string> buildEncodingMap(HuffmanNode* encodingTree) {
     Map<int, string> encodingMap;
-    if(encodingTree != NULL) traverseTree(encodingTree, encodingMap, "");    
+    if(encodingTree != NULL) traverseTreeEncode(encodingTree, encodingMap, "");    
     return encodingMap;
 }
 
 /**
- * @brief traverseTree
+ * @brief traverseTreeEncode
  * Recursively goes through tree, assigning codes to each leaf node (character).
  * @param currNode - pointer to current node in the tree
  * @param encodingMap - map passed by reference that stores characters and their codes
  * @param currCode - string with current code, built up by 0's and 1's based on left 
  *                   and right branches
  */
-void traverseTree(HuffmanNode* currNode, Map<int, string>& encodingMap, string currCode) {
+void traverseTreeEncode(HuffmanNode* currNode, Map<int, string>& encodingMap, string currCode) {
     if (currNode->isLeaf()) {
         encodingMap.put(currNode->character, currCode); // add character and code to map
         return;
     }
     
-    traverseTree(currNode->zero, encodingMap, currCode + "0"); // left
-    traverseTree(currNode->one, encodingMap, currCode + "1"); // right
+    traverseTreeEncode(currNode->zero, encodingMap, currCode + "0"); // left
+    traverseTreeEncode(currNode->one, encodingMap, currCode + "1"); // right
 }
 
 /**
@@ -137,7 +138,7 @@ void traverseTree(HuffmanNode* currNode, Map<int, string>& encodingMap, string c
  * @param output - output stream where Huffman encoding is written
  */
 void encodeData(istream& input, const Map<int, string>& encodingMap, obitstream& output) {
-    char currCharacter;
+    int currCharacter;
     bool endOfFile = false;
     
     while (!endOfFile) {
@@ -167,8 +168,47 @@ void writeBit(obitstream& output, string value) {
     }
 }
 
+/**
+ * @brief decodeData
+ * Decodes inputted data given an encoding tree and writes decoded output onto console.
+ * Wrapper function for recursive traverseTreeDecode function.
+ * @param input - input stream with encoded data 
+ * @param encodingTree - pointer to head node of encoding tree
+ * @param output - output stream to write decoded data
+ */
 void decodeData(ibitstream& input, HuffmanNode* encodingTree, ostream& output) {
-    // TODO: implement this function
+    traverseTreeDecode(input, encodingTree, output, encodingTree);
+}
+
+/**
+ * @brief traverseTreeDecode
+ * Recursively goes through encoded data and looks through provided encoding tree to
+ * decode the data. 
+ * @param input - input stream with encoded data
+ * @param head - pointer to head node of encoding tree; for use when "rewinding" to the
+ *               top of the tree for each new character
+ * @param output - output stream to write decoded data
+ * @param currNode - pointer to current node of encoding tree
+ */
+void traverseTreeDecode(ibitstream& input, HuffmanNode* head, ostream& output, HuffmanNode* currNode) {
+    if (currNode->isLeaf()) { // base case
+        if (currNode->character == PSEUDO_EOF) { // end of file, stop reading
+            freeTree(head);
+            return;
+        } else { // add letter
+            output.put(currNode->character);
+            currNode = head; // reset current node
+        }
+    }
+    
+    // go down tree
+    int direction = input.readBit();
+    if (direction == 0) {
+        traverseTreeDecode(input, head, output, currNode->zero);
+    } else if (direction == 1) {
+        cout << currNode << endl;
+        traverseTreeDecode(input, head, output, currNode->one);
+    }
 }
 
 void compress(istream& input, obitstream& output) {
