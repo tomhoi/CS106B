@@ -1,18 +1,20 @@
-// This is the CPP file you will edit and turn in.
-// Also remove these comments here and add your own, along with
-// comments on every function and on complex code sections.
-// TODO: remove this comment header
+/* Huffman encoding class.
+ * Implements functions to encode and decode a text, image, or audio file
+ * using Huffman encoding. 
+ */
 
 #include "encoding.h"
 #include "pqueue.h"
 #include "vector.h"
+#include "filelib.h"
 
 // helper functions
 void makePriorityQueue(PriorityQueue<HuffmanNode*>& pqueue, const Map<int, int>& freqTable); 
 void makeTree(PriorityQueue<HuffmanNode*>& pqueue);
 void traverseTreeEncode(HuffmanNode* currNode, Map<int, string>& encodingMap, string currCode);
 void writeBit(obitstream& output, string value);
-void traverseTreeDecode(ibitstream& input, HuffmanNode* head, ostream& output, HuffmanNode* currNode);
+bool traverseTreeDecode(ibitstream& input, HuffmanNode* head, ostream& output, HuffmanNode* currNode);
+Map<int, int> stringToMap(ibitstream& input);
 
 /**
  * @brief buildFrequencyTable
@@ -138,6 +140,7 @@ void traverseTreeEncode(HuffmanNode* currNode, Map<int, string>& encodingMap, st
  * @param output - output stream where Huffman encoding is written
  */
 void encodeData(istream& input, const Map<int, string>& encodingMap, obitstream& output) {
+    rewindStream(input);
     int currCharacter;
     bool endOfFile = false;
     
@@ -176,49 +179,132 @@ void writeBit(obitstream& output, string value) {
  * @param encodingTree - pointer to head node of encoding tree
  * @param output - output stream to write decoded data
  */
-void decodeData(ibitstream& input, HuffmanNode* encodingTree, ostream& output) {
-    traverseTreeDecode(input, encodingTree, output, encodingTree);
+void decodeData(ibitstream& input, HuffmanNode* encodingTree, ostream& output) {    
+    bool keepDecompressing = true;
+    
+    while (keepDecompressing) {
+        keepDecompressing = traverseTreeDecode(input, encodingTree, output, encodingTree);
+    }
 }
 
 /**
  * @brief traverseTreeDecode
  * Recursively goes through encoded data and looks through provided encoding tree to
- * decode the data. 
+ * decode the data. When done, frees up encoding tree memory.
  * @param input - input stream with encoded data
  * @param head - pointer to head node of encoding tree; for use when "rewinding" to the
  *               top of the tree for each new character
  * @param output - output stream to write decoded data
  * @param currNode - pointer to current node of encoding tree
+ * @return - Returns whether to continue decompressing the file.
  */
-void traverseTreeDecode(ibitstream& input, HuffmanNode* head, ostream& output, HuffmanNode* currNode) {
+bool traverseTreeDecode(ibitstream& input, HuffmanNode* head, ostream& output, HuffmanNode* currNode) {
     if (currNode->isLeaf()) { // base case
         if (currNode->character == PSEUDO_EOF) { // end of file, stop reading
             freeTree(head);
-            return;
+            return false;
         } else { // add letter
             output.put(currNode->character);
-            currNode = head; // reset current node
+            return true;
         }
-    }
+    } 
     
     // go down tree
     int direction = input.readBit();
     if (direction == 0) {
-        traverseTreeDecode(input, head, output, currNode->zero);
-    } else if (direction == 1) {
-        cout << currNode << endl;
-        traverseTreeDecode(input, head, output, currNode->one);
-    }
+        return traverseTreeDecode(input, head, output, currNode->zero);
+    } else { // direction == 1
+        return traverseTreeDecode(input, head, output, currNode->one);
+    }    
 }
 
+/**
+ * @brief compress
+ * Compresses a file. Creates an encoding tree from a frequency table (which is
+ * outputted as the header), and then encodes the file with the tree and writes
+ * its content to the output stream.
+ * @param input - input stream to read the un-coded file
+ * @param output - output stream to write the header and encoded file
+ */
 void compress(istream& input, obitstream& output) {
-    // TODO: implement this function
+    Map<int, int> frequencyTable = buildFrequencyTable(input);
+    output << frequencyTable; // put header
+    HuffmanNode* tree = buildEncodingTree(frequencyTable);
+    encodeData(input, buildEncodingMap(tree), output);
+    freeTree(tree);
 }
 
+/**
+ * @brief decompress
+ * Decompresses a Huffman-encoded file. Creates an encoding tree from the header
+ * at the beginning of the encoded file and then decodes the file and writes
+ * the contents to the output stream.
+ * @param input - input stream to read the encoded file
+ * @param output - output stream to put the decoded file
+ */
 void decompress(ibitstream& input, ostream& output) {
-    // TODO: implement this function
+    Map<int, int> freqTable = stringToMap(input);
+    HuffmanNode* tree = buildEncodingTree(freqTable);
+    decodeData(input, tree, output);
 }
 
+/**
+ * @brief stringToMap
+ * Creates a map of integers to integers given a map in string form. 
+ * @param input - input stream to read map in string form
+ * @return - returns the genereated map
+ */
+Map<int, int> stringToMap(ibitstream& input) {
+    bool endOfMap = false;
+    bool isNewEntry = false;
+    string text;
+    Map<int, int> freqTable;
+    
+    while(!endOfMap) {        
+        char next = input.get();
+        
+        // flag characters or characters to ignore
+        if (next == '}') {
+            endOfMap = true; 
+            isNewEntry = true; // final entry that doens't end with a comma
+        }
+        if (next == '{') continue;
+        if (next == ',') isNewEntry = true;
+        
+        if (isNewEntry) {
+            // put entry in map
+            int colonIndex = text.find(":");
+            string key = text.substr(0, colonIndex);
+            string value = text.substr(colonIndex + 1, string::npos);
+            freqTable.put(stringToInteger(key), stringToInteger(value));
+            
+            // reset
+            isNewEntry = false;
+            text = "";
+        } else {
+            text += next;
+        }
+    }
+    
+    return freqTable;
+}
+
+/**
+ * @brief freeTree
+ * Frees tree memory given pointer to top node of tree. 
+ * @param node - pointer to top node of tree
+ */
 void freeTree(HuffmanNode* node) {
-    // TODO: implement this function
+    // base cases
+    if (node == NULL) { // empty tree
+        return;
+    } else if (node->isLeaf()) { // leaf node
+        delete node;
+        return;
+    }
+    
+    // keep going down tree
+    freeTree(node->zero);
+    freeTree(node->one);
+    delete node; // delete parent
 }
