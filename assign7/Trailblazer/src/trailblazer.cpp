@@ -6,6 +6,7 @@
 #include "costs.h"
 #include "trailblazer.h"
 #include "queue.h"
+#include "pqueue.h"
 using namespace std;
 
 bool DFS(BasicGraph& graph, Vertex* curr, Vertex* end, Vector<Vertex*>& path);
@@ -124,11 +125,49 @@ void retracePath(Vertex* curr, Vector<Vertex*>& path) {
 }
 
 Vector<Vertex*> dijkstrasAlgorithm(BasicGraph& graph, Vertex* start, Vertex* end) {
-    // TODO: implement this function; remove these comments
-    //       (The function body code provided below is just a stub that returns
-    //        an empty vector so that the overall project will compile.
-    //        You should remove that code and replace it with your implementation.)
     Vector<Vertex*> path;
+    PriorityQueue<Vertex*> pqueue;
+    
+    graph.resetData(); // reset before each search
+    
+    // set cost of all vertices to be infinity
+    Set<Vertex*> allVertices = graph.getVertexSet();
+    for (Vertex* vertex : allVertices) {
+        vertex->cost = POSITIVE_INFINITY;
+    }
+    
+    // set start node to have cost 0 and enqueue
+    start->cost = 0;
+    pqueue.enqueue(start, 0);
+    
+    // search
+    while (!pqueue.isEmpty()) {
+        Vertex* curr = pqueue.dequeue();
+        curr->visited = true;
+        curr->setColor(GREEN);
+        
+        if (curr == end) { // done searching
+            retracePath(curr, path);
+            break;
+        }
+        
+        for (Edge* edge : curr->edges) { // neighbors
+            Vertex* neighbor = edge->finish; // extract neighbor
+            if (neighbor->visited) continue; // skip if already visited
+            int cost = curr->cost + edge->cost; // calculate cost
+            if (cost < neighbor->cost) { // update if new cost/path is better
+                neighbor->cost = cost;
+                neighbor->previous = curr;
+                if (neighbor->getColor() == YELLOW) { // already in pqueue but not yet processed
+                    pqueue.changePriority(neighbor, cost);
+                } else {
+                    pqueue.enqueue(neighbor, cost);
+                }
+                neighbor->setColor(YELLOW);
+            }
+        }
+    }
+    
     return path;
 }
 
