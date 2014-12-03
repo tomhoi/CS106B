@@ -115,13 +115,9 @@ Vector<Vertex*> breadthFirstSearch(BasicGraph& graph, Vertex* start, Vertex* end
  * @param path - Vector to fill with vertexes on found path 
  */
 void retracePath(Vertex* curr, Vector<Vertex*>& path) {
-    Vector<Vertex*> temp;
-    for (curr; curr != NULL; curr = curr->previous) { // retrace
-        temp.add(curr);
-    }   
-    for (int i = temp.size() - 1; i >= 0; i--) { // flip the vector so start index is at 0
-        path.add(temp[i]);
-    }
+    if (curr == NULL) return;
+    retracePath(curr->previous, path);
+    path.add(curr);
 }
 
 Vector<Vertex*> dijkstrasAlgorithm(BasicGraph& graph, Vertex* start, Vertex* end) {
