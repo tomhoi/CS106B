@@ -11,6 +11,9 @@ using namespace std;
 
 bool DFS(BasicGraph& graph, Vertex* curr, Vertex* end, Vector<Vertex*>& path);
 void retracePath(Vertex* curr, Vector<Vertex*>& path);
+Vector<Vertex*> genericDijkstra(BasicGraph& graph, Vertex* start, Vertex* end, double (newPriority)(Vertex*, Vertex*, double));
+double newDijkstraPriority(Vertex* start, Vertex* end, double cost);
+double newAStarPriority(Vertex* start, Vertex* end, double cost);
 
 /**
  * @brief depthFirstSearch
@@ -120,7 +123,7 @@ void retracePath(Vertex* curr, Vector<Vertex*>& path) {
     path.add(curr);
 }
 
-Vector<Vertex*> dijkstrasAlgorithm(BasicGraph& graph, Vertex* start, Vertex* end) {
+Vector<Vertex*> genericDijkstra(BasicGraph& graph, Vertex* start, Vertex* end, double (newPriority)(Vertex*, Vertex*, double)) {
     Vector<Vertex*> path;
     PriorityQueue<Vertex*> pqueue;
     
@@ -134,30 +137,30 @@ Vector<Vertex*> dijkstrasAlgorithm(BasicGraph& graph, Vertex* start, Vertex* end
     
     // set start node to have cost 0 and enqueue
     start->cost = 0;
-    pqueue.enqueue(start, 0);
+    pqueue.enqueue(start, newPriority(start, end, 0));
     
     // search
     while (!pqueue.isEmpty()) {
-        Vertex* curr = pqueue.dequeue();
+        Vertex* curr = pqueue.dequeue(); // dequeue highest priority node
         curr->visited = true;
         curr->setColor(GREEN);
         
         if (curr == end) { // done searching
             retracePath(curr, path);
-            break;
+            return path;
         }
         
         for (Edge* edge : curr->edges) { // neighbors
             Vertex* neighbor = edge->finish; // extract neighbor
-            if (neighbor->visited) continue; // skip if already visited
-            int cost = curr->cost + edge->cost; // calculate cost
+            if (neighbor->visited) continue;
+            double cost = curr->cost + edge->cost; // calculate cost
             if (cost < neighbor->cost) { // update if new cost/path is better
                 neighbor->cost = cost;
                 neighbor->previous = curr;
                 if (neighbor->getColor() == YELLOW) { // already in pqueue but not yet processed
-                    pqueue.changePriority(neighbor, cost);
+                    pqueue.changePriority(neighbor, newPriority(neighbor, end, cost));
                 } else {
-                    pqueue.enqueue(neighbor, cost);
+                    pqueue.enqueue(neighbor, newPriority(neighbor, end, cost));
                 }
                 neighbor->setColor(YELLOW);
             }
@@ -167,13 +170,20 @@ Vector<Vertex*> dijkstrasAlgorithm(BasicGraph& graph, Vertex* start, Vertex* end
     return path;
 }
 
+Vector<Vertex*> dijkstrasAlgorithm(BasicGraph& graph, Vertex* start, Vertex* end) {
+    return genericDijkstra(graph, start, end, newDijkstraPriority);
+}
+
+double newDijkstraPriority(Vertex* start, Vertex* end, double cost) {
+    return cost;
+}
+
+double newAStarPriority(Vertex* start, Vertex* end, double cost) {
+    return cost + heuristicFunction(start, end);
+}
+
 Vector<Vertex*> aStar(BasicGraph& graph, Vertex* start, Vertex* end) {
-    // TODO: implement this function; remove these comments
-    //       (The function body code provided below is just a stub that returns
-    //        an empty vector so that the overall project will compile.
-    //        You should remove that code and replace it with your implementation.)
-    Vector<Vertex*> path;
-    return path;
+    return genericDijkstra(graph, start, end, newAStarPriority);
 }
 
 Set<Edge*> kruskal(BasicGraph& graph) {
