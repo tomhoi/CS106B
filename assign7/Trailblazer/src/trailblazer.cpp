@@ -1,7 +1,9 @@
-// This is the CPP file you will edit and turn in.
-// Also remove these comments here and add your own, along with
-// comments on every function and on complex code sections.
-// TODO: write comment header for this file; remove this comment
+/*
+ * Trailblazer
+ * ---------------------------------------------------------------------------------
+ * Implements four shortest path algorithms and one minimum spanning tree algorithm.
+ * 
+ */
 
 #include "costs.h"
 #include "trailblazer.h"
@@ -128,6 +130,15 @@ void retracePath(Vertex* curr, Vector<Vertex*>& path) {
     path.add(curr);
 }
 
+/**
+ * @brief genericDijkstra
+ * Generic Dijkstra's algorithm implementation that can be used for Dijkstra's algorithm or
+ * A* algorithm by changing the callback function for priority calculation.
+ * @param graph
+ * @param start
+ * @param end
+ * @return 
+ */
 Vector<Vertex*> genericDijkstra(BasicGraph& graph, Vertex* start, Vertex* end, double (newPriority)(Vertex*, Vertex*, double)) {
     // ================== SETUP ===================
     Vector<Vertex*> path;
@@ -179,7 +190,10 @@ Vector<Vertex*> genericDijkstra(BasicGraph& graph, Vertex* start, Vertex* end, d
 
 /**
  * @brief dijkstrasAlgorithm
- * Uses Dijkstra's algorithm to search a given graph. [FINISH MEEEEEEEEEEEEEE---------]
+ * Uses Dijkstra's algorithm to search a given graph. From start of the path, goes through neighboring
+ * vertices in order of their edge cost. Each vertex keeps track of its lowest cost from the start vertex,
+ * and updates its cost if a lower cost path is found. Continues until reaches thd vertex, guaranteeing the
+ * shortest path.
  * @param graph - Provided graph on which to search
  * @param start - Start vertex of path
  * @param end - Desired end vertex of path
@@ -189,6 +203,16 @@ Vector<Vertex*> dijkstrasAlgorithm(BasicGraph& graph, Vertex* start, Vertex* end
     return genericDijkstra(graph, start, end, newDijkstraPriority);
 }
 
+/**
+ * @brief newDijkstraPriority
+ * Callback function for calculating new node priorities during Dijsktra's search. Just
+ * returns the new node's edge as calculated in the generic Dijkstra function, without
+ * any added heuristic.
+ * @param start - Current vertex being assigned a priority
+ * @param end - Desired end vertex of path
+ * @param cost - Previous vertex's cost + cost of new edge to current vertex
+ * @return - Priority
+ */
 double newDijkstraPriority(Vertex* start, Vertex* end, double cost) {
     return cost;
 }
@@ -218,7 +242,7 @@ Vector<Vertex*> aStar(BasicGraph& graph, Vertex* start, Vertex* end) {
  * @param start - Current vertex being assigned a priority
  * @param end - Desired end vertex of path
  * @param cost - Previous vertex's cost + cost of new edge to current vertex
- * @return 
+ * @return - Priority
  */
 double newAStarPriority(Vertex* start, Vertex* end, double cost) {
     return cost + heuristicFunction(start, end);
@@ -308,7 +332,7 @@ void mergeSets(Vertex* start, Vertex* end, Vector<Set<Vertex*> >& vertexSets) {
     vertexSets.remove(endSet);
 }
 
-/*
+/* ================== DISJOINT SETS ==================
  * 
 // * Same basic idea as Kruskal's algorithm implementation above, except uses
 // * a disjoint set forest instead of a Vector of vertex sets. Clusters are trees
