@@ -34,6 +34,14 @@ void parseLine(string line, vector<int>& parsed) {
     parsed.push_back(atoi(currToken.c_str())); // last token
 }
 
+vector<int> DataEntry::getValues() {
+    return values;
+}
+
+int DataEntry::getAnswer() {
+    return answer;
+}
+
 void DataEntry::print() {
     cout << "VALUES: ";
     for (int val : values) {

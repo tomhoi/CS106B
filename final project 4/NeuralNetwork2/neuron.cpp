@@ -3,13 +3,8 @@
 
 double sigmoid(double val);
 
-Neuron::Neuron(double weight) {
-    this->weight = weight;
-    outputVal = 0;
-}
-
 Neuron::Neuron() {
-    Neuron((rand() % 100) / 100.0); // between 0 and 1, hundredths place
+    
 }
 
 Neuron::~Neuron() {
@@ -19,10 +14,10 @@ Neuron::~Neuron() {
 double Neuron::calculateOutput() {
     // calculate
     double result = 0;
-    for (Neuron* neuron : inputs) { // sum
-        result += neuron->getOutputVal() * neuron->getWeight();
+    for (Connection* connection : sources) { // sum
+        result += connection->getWeight() * connection->getSource()->getOutputVal();
     }
-    result = sigmoid(result); // activation
+    result = sigmoid(result);
     
     // set as own output val and return
     outputVal = result;
@@ -37,21 +32,16 @@ double Neuron::getOutputVal() {
     return outputVal;
 }
 
-double Neuron::getWeight() {
-    return weight;
+void Neuron::addConnection(Neuron* source) {
+    sources.insert(source);
 }
 
-double Neuron::adjustWeight(double deltaWeight) {
-    weight += deltaWeight;
-    return weight;
+void Neuron::addConnection(Connection* connection) {
+    if (connection->getDestination() == this) {
+        sources.insert(connection);
+    }
 }
 
-void Neuron::addInputNeuron(Neuron* input) {
-    inputs.insert(input);
-    input->addOutputNeuron(this);
-}
-
-void Neuron::addOutputNeuron(Neuron* output) {
-    outputs.insert(output);
-    output->addInputNeuron(this); // make the backwards connection as well
+set<Connection*> Neuron::getSources() {
+    return sources;
 }
