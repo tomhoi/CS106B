@@ -1,10 +1,29 @@
 #ifndef LAYER_H
 #define LAYER_H
 
+#include "neuron.h"
+#include "connection.h"
+#include "vector"
+
+using namespace std;
+
 class Layer
 {
 public:
-    Layer();
+    Layer(int size, Layer* prev);
+    ~Layer();
+    
+    vector<Neuron*> getNeurons();
+    void setNextLayer(Layer* layer);
+    void setInputs(vector<int>& inputs);
+    
+private:
+    vector<Neuron*> neurons;
+    void addNeuron(Neuron* neuron);
+    Neuron* bias;
+    
+    Layer* prevLayer;
+    Layer* nextLayer;
 };
 
 #endif // LAYER_H

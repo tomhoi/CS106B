@@ -4,7 +4,7 @@
 double sigmoid(double val);
 
 Neuron::Neuron() {
-    
+    hasInputVal = false;
 }
 
 Neuron::~Neuron() {
@@ -14,10 +14,14 @@ Neuron::~Neuron() {
 double Neuron::calculateOutput() {
     // calculate
     double result = 0;
-    for (Connection* connection : sources) { // sum
-        result += connection->getWeight() * connection->getSource()->getOutputVal();
+    if (hasInputVal && sources.empty()) { // bias or input neuron
+        result += inputVal;
+    } else { // hidden or output neuron
+        for (Connection* connection : sources) { // sum
+            result += connection->getWeight() * connection->getSource()->getOutputVal();
+        }
+        result = sigmoid(result); // activation
     }
-    result = sigmoid(result);
     
     // set as own output val and return
     outputVal = result;
@@ -32,16 +36,22 @@ double Neuron::getOutputVal() {
     return outputVal;
 }
 
-void Neuron::addConnection(Neuron* source) {
-    sources.insert(source);
+void Neuron::setInputVal(int val) {
+    inputVal = val;
+    hasInputVal = true;
 }
 
-void Neuron::addConnection(Connection* connection) {
+void Neuron::addSource(Neuron* source) {
+    Connection* connection = new Connection(this, source);
+    sources.push_back(connection);
+}
+
+void Neuron::addSource(Connection* connection) {
     if (connection->getDestination() == this) {
-        sources.insert(connection);
+        sources.push_back(connection);
     }
 }
 
-set<Connection*> Neuron::getSources() {
+vector<Connection*> Neuron::getSources() {
     return sources;
 }

@@ -1,7 +1,7 @@
 #ifndef NEURON_H
 #define NEURON_H
 
-#include "set"
+#include "vector"
 #include "connection.h"
 
 using namespace std;
@@ -16,16 +16,18 @@ public:
     
     double calculateOutput();
     double getOutputVal();
+    void setInputVal(int val);
     
-    void addConnection(Neuron* source);
-    void addConnection(Connection* connection);
-    set<Connection*> getSources();
+    void addSource(Neuron* source);
+    void addSource(Connection* connection);
+    vector<Connection*> getSources();
     
 private:
     double outputVal;
+    int inputVal; // direct input value from user (for bias or input neurons)
+    bool hasInputVal;
     
-    set<Connection*> sources;
-//    set<Connection*> destinations;
+    vector<Connection*> sources;
 };
 
 #endif // NEURON_H
