@@ -14,9 +14,10 @@ public:
     Neuron();
     ~Neuron();
     
-    double calculateOutput();
-    double getOutputVal();
-    void setInputVal(int val);
+    double feedForward();
+    void setInputVal(double val);
+    double getInputVal();
+    bool getHasInputVal();
     
     void addSource(Neuron* source);
     void addSource(Connection* connection);
@@ -24,7 +25,7 @@ public:
     
 private:
     double outputVal;
-    int inputVal; // direct input value from user (for bias or input neurons)
+    double inputVal; // direct input value from user (for bias or input neurons)
     bool hasInputVal;
     
     vector<Connection*> sources;

@@ -2,6 +2,7 @@
 #include "math.h"
 
 double sigmoid(double val);
+double calculateOutput(Neuron* curr);
 
 Neuron::Neuron() {
     hasInputVal = false;
@@ -11,32 +12,36 @@ Neuron::~Neuron() {
     
 }
 
-double Neuron::calculateOutput() {
-    // calculate
-    double result = 0;
-    if (hasInputVal && sources.empty()) { // bias or input neuron
-        result += inputVal;
-    } else { // hidden or output neuron
-        for (Connection* connection : sources) { // sum
-            result += connection->getWeight() * connection->getSource()->getOutputVal();
+double Neuron::feedForward() {
+    return calculateOutput(this);
+}
+
+double calculateOutput(Neuron *curr) {
+    if (curr->getHasInputVal()) { // base case (bias or input neuron)
+        return curr->getInputVal();
+    } else {
+        double result = 0;
+        for (Connection* connection : curr->getSources()) {
+            result += connection->getWeight() * calculateOutput(connection->getSource());
         }
-        result = sigmoid(result); // activation
+        result = sigmoid(result);
+        return result;
     }
-    
-    // set as own output val and return
-    outputVal = result;
-    return result;
+}
+
+double Neuron::getInputVal() {
+    return inputVal;
+}
+
+bool Neuron::getHasInputVal() {
+    return hasInputVal;
 }
 
 double sigmoid(double val) {
     return (1 / (1 + exp(val)));
 }
 
-double Neuron::getOutputVal() {
-    return outputVal;
-}
-
-void Neuron::setInputVal(int val) {
+void Neuron::setInputVal(double val) {
     inputVal = val;
     hasInputVal = true;
 }

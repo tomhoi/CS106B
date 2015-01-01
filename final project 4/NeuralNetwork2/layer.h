@@ -16,6 +16,10 @@ public:
     vector<Neuron*> getNeurons();
     void setNextLayer(Layer* layer);
     void setInputs(vector<int>& inputs);
+    bool isInputLayer();
+    Layer* getPrevLayer();
+    
+    vector<double> feedForward(Layer* curr);
     
 private:
     vector<Neuron*> neurons;

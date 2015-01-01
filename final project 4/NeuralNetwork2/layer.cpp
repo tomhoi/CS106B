@@ -2,6 +2,7 @@
 
 Layer::Layer(int size, Layer* prev) {
     prevLayer = prev; // set previous layer
+    if (prev) prev->setNextLayer(this); // set previous layer's next layer (if applicable)
     
     for (int i = 0; i < size; i++) { // add given number of neurons
         Neuron* neuron = new Neuron();
@@ -39,4 +40,20 @@ void Layer::setInputs(vector<int> &inputs) {
             neurons[i]->setInputVal(inputs[i]);
         }
     }
+}
+
+bool Layer::isInputLayer() {
+    return !prevLayer;
+}
+
+Layer* Layer::getPrevLayer() {
+    return prevLayer;
+}
+
+vector<double> Layer::feedForward(Layer* curr) {
+    vector<double> outputs;
+    for (Neuron* neuron : neurons) {
+        outputs.push_back(neuron->feedForward());
+    }
+    return outputs;
 }
